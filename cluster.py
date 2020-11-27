@@ -3,7 +3,6 @@ import re
 import string
 import json
 import math
-import numpy as np
 import sys
 
 stopwords = ["i", "a", "about", "an", "and", "are", "as", "at", "be", "by", "for", "from", "how", "in", "is", "it", "of", "on", "or", "that", "the", "this", "to", "was", "what", "when",
@@ -12,10 +11,11 @@ posting = {}
 df = {}
 terms = []
 vectors = {}
+#r'D:\Projects\CPS842-Project\bbcsport'
 
 def create_tokens():
     print("Parsing Document...")
-    directory = r'D:\Projects\CPS842-Project\bbcsport'
+    directory = r'C:\Users\MV\Documents\GitHub\K-Means-Clustering\bbcsport'
     tokens = open("tokens.txt", "w")
     for subdir, dirs, files in os.walk(directory):
         for filename in files:
@@ -98,7 +98,7 @@ def dot_product(a,b):
 def recalc_centroids(c):
     if len(c) == 0:
         return 0
-    total = vectors[c[0]]
+    total = vectors[c[0]].copy()
     for i in range(1, len(c)-1):
         for p in range(len(vectors[c[i]])-1):
             vec = vectors[c[i]]
@@ -117,6 +117,21 @@ def max_sim(scores):
             return index
         else:
             index += 1
+
+def e_distance(v1, v2):
+    squares = [(p-q) ** 2 for p, q in zip(v1, v2)]
+    return sum(squares) ** .5
+
+def cluster_tightness(cluster, centroid):
+    total = 0
+    for i in range(len(cluster)-1):
+        vec = vectors[cluster[i]]
+        total += e_distance(vec, centroid)
+        for p in range(i+1, len(cluster)):
+            v1 = vectors[cluster[i]]
+            v2 = vectors[p]
+            total += e_distance(v1, v2)
+    return total
 
 
 def clusters():
@@ -176,6 +191,16 @@ def clusters():
 
         if (c > 1) and prev_clusters == clusters and prev_centroid == centroids:
             print("Convergence Reached")
+            t1 = cluster_tightness(clusters[1], centroids[0])
+            print(t1)
+            t2 = cluster_tightness(clusters[2], centroids[1])
+            print(t2)
+            t3 = cluster_tightness(clusters[3], centroids[2])
+            print(t3)
+            t4 = cluster_tightness(clusters[4], centroids[3])
+            print(t4)
+            t5 = cluster_tightness(clusters[5], centroids[4])
+            print(t5)
             break
         #print("Centroids for Iteration " + str(c) + "\n")
         #print(centroids)
@@ -189,5 +214,4 @@ save = json.dumps(posting, sort_keys=True)
 s = open("posting.json", "w")
 s.write(save)
 s.close()
-
 clusters()

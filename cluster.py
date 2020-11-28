@@ -4,6 +4,7 @@ import string
 import json
 import math
 import sys
+import random
 
 stopwords = ["i", "a", "about", "an", "and", "are", "as", "at", "be", "by", "for", "from", "how", "in", "is", "it", "of", "on", "or", "that", "the", "this", "to", "was", "what", "when",
 "where", "who", "will", "with", "the"]
@@ -11,22 +12,30 @@ posting = {}
 df = {}
 terms = []
 vectors = {}
+document_titles = {}
 #r'D:\Projects\CPS842-Project\bbcsport'
 
 def create_tokens():
     print("Parsing Document...")
     directory = r'C:\Users\MV\Documents\GitHub\K-Means-Clustering\bbcsport'
     tokens = open("tokens.txt", "w")
+    docid = 0
     for subdir, dirs, files in os.walk(directory):
         for filename in files:
             filepath = subdir + os.sep + filename
+            category = subdir.rsplit('\\', 1)[-1]
             if filepath.endswith(".txt"):
                 tokens.write("\n")
                 with open((filepath), "r") as lines:
+                    docid += 1
+                    count = 0
                     for line in lines:
                         if line is "\n":
                             continue
                         else:
+                            if count is 0:
+                                document_titles[docid] = [category, line.strip()]
+                                count += 1
                             line = line.strip()
                             line = line.replace("-", " ")
                             line = re.sub (r'([^a-zA-Z\s]+?)', '', line)
@@ -120,7 +129,7 @@ def max_sim(scores):
 
 def e_distance(v1, v2):
     squares = [(p-q) ** 2 for p, q in zip(v1, v2)]
-    return sum(squares) ** .5
+    return math.sqrt(sum(squares))
 
 def cluster_tightness(cluster, centroid):
     total = 0
@@ -133,10 +142,37 @@ def cluster_tightness(cluster, centroid):
             total += e_distance(v1, v2)
     return total
 
+def get_document_titles(cluster):
+    for i in cluster:
+        print(document_titles[i][1] + " : " + document_titles[i][0])
+
+def purity_test(cluster):
+    classes = ["athletics", "cricket", "football", "rugby", "tennis"]
+    class_counter = [0, 0, 0, 0, 0]
+    for i in cluster:
+        class_name = document_titles[i][0]
+        if class_name == "athletics":
+            class_counter[0] += 1
+        elif class_name == "cricket":
+            class_counter[1] += 1
+        elif class_name == "football":
+            class_counter[2] += 1
+        elif class_name == "rugby":
+            class_counter[3] += 1
+        elif class_name == "tennis":
+            class_counter[4] += 1
+    
+    max_value = max(class_counter)
+    max_index = class_counter.index(max_value)
+    return classes[max_index]
+
 
 def clusters():
-    intial_centroids = [140, 225, 44, 17, 90 ]
-    centroids = [vectors[10], vectors[25], vectors[32], vectors[44], vectors[51]]
+    intial_centroids = []
+    for c in range(0, 5):
+        n = random.randint(1,737)
+        intial_centroids.append(n)
+    centroids = [vectors[intial_centroids[0]], vectors[intial_centroids[1]], vectors[intial_centroids[2]], vectors[intial_centroids[3]], vectors[intial_centroids[4]]]
     prev_centroid = []
     clusters = {1: [], 2: [], 3: [], 4: [], 5: []}
     c = 0
@@ -191,16 +227,36 @@ def clusters():
 
         if (c > 1) and prev_clusters == clusters and prev_centroid == centroids:
             print("Convergence Reached")
-            t1 = cluster_tightness(clusters[1], centroids[0])
-            print(t1)
-            t2 = cluster_tightness(clusters[2], centroids[1])
-            print(t2)
-            t3 = cluster_tightness(clusters[3], centroids[2])
-            print(t3)
-            t4 = cluster_tightness(clusters[4], centroids[3])
-            print(t4)
-            t5 = cluster_tightness(clusters[5], centroids[4])
-            print(t5)
+            print("Cluster #1")
+            #get_document_titles(clusters[1])
+            c1 = purity_test(clusters[1])
+            print("Class: " + c1)
+            print("Cluster #2")
+            #get_document_titles(clusters[2])
+            c2 = purity_test(clusters[2])
+            print("Class: " + c2)
+            print("Cluster #3")
+            #get_document_titles(clusters[3])
+            c3 = purity_test(clusters[3])
+            print("Class: " + c3)
+            print("Cluster #4")
+            #get_document_titles(clusters[4])
+            c4 = purity_test(clusters[4])
+            print("Class: " + c4)
+            print("Cluster #5")
+            #get_document_titles(clusters[5])
+            c5 = purity_test(clusters[5])
+            print("Class: " + c5)
+            #t1 = cluster_tightness(clusters[1], centroids[0])
+            #print(t1)
+            #t2 = cluster_tightness(clusters[2], centroids[1])
+            #print(t2)
+            #t3 = cluster_tightness(clusters[3], centroids[2])
+            #print(t3)
+            #t4 = cluster_tightness(clusters[4], centroids[3])
+            #print(t4)
+            #t5 = cluster_tightness(clusters[5], centroids[4])
+            #print(t5)
             break
         #print("Centroids for Iteration " + str(c) + "\n")
         #print(centroids)
@@ -208,6 +264,7 @@ def clusters():
 
 
 create_tokens()
+print(document_titles)
 invert("tokens.txt")
 create_vectors()
 save = json.dumps(posting, sort_keys=True)
